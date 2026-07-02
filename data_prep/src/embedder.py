@@ -18,6 +18,8 @@ import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 
+import config
+
 
 def _auto_device() -> str:
     if torch.cuda.is_available():
@@ -80,6 +82,30 @@ class Embedder:
                 )
 
             yield np.asarray(batch_embeddings, dtype="float32")
+
+    def embed_query(self, text: str) -> np.ndarray:
+        """
+        Embed a single user query (as a query, not a passage).
+
+        Uses config.E5_QUERY_PREFIX instead of self.passage_prefix, per
+        e5's asymmetric query/passage convention. Reuses the already-loaded
+        model — no separate model instance is created.
+
+        Returns a (1, embedding_dim) float32 array, ready to pass directly
+        to a FAISS index's .search().
+        """
+        prefixed = f"{config.E5_QUERY_PREFIX}{text}"
+
+        with torch.inference_mode():
+            embedding = self.model.encode(
+                [prefixed],
+                batch_size=1,
+                show_progress_bar=False,
+                normalize_embeddings=True,
+                convert_to_numpy=True,
+            )
+
+        return np.asarray(embedding, dtype="float32")
 
     def embed_passages(self, texts: list[str]) -> np.ndarray:
         """
