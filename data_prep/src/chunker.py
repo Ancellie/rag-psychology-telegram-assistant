@@ -71,6 +71,16 @@ def _chunk_sentences(
     results: list[tuple[str, str]] = []
     current: list[str] = []
     current_len = 0
+    # FIX: track whether at least one new sentence has been appended since the
+    # last chunk boundary.  A boundary may only be emitted when this is True,
+    # which guarantees that every iteration of the outer loop either (a) emits
+    # a chunk that contains at least one sentence that was not in the previous
+    # chunk's overlap window, or (b) appends a sentence and advances i.
+    # Without this guard, a sentence whose word-count exceeds
+    # (target_tokens − overlap_tokens) causes an infinite loop: the overlap
+    # window is re-emitted as a chunk, the identical overlap is rebuilt, and
+    # the oversized sentence is re-evaluated forever without i ever advancing.
+    new_sentence_added = False
 
     i = 0
     n = len(sentences)
@@ -86,7 +96,7 @@ def _chunk_sentences(
             current and (current_len + sentence_len > target_tokens)
         )
 
-        if should_break_for_topic or should_break_for_size:
+        if (should_break_for_topic or should_break_for_size) and new_sentence_added:
             reason = "topic_shift" if should_break_for_topic else "token_limit"
             results.append((" ".join(current), reason))
 
@@ -102,10 +112,12 @@ def _chunk_sentences(
 
             current = overlap_sentences
             current_len = overlap_len
+            new_sentence_added = False  # reset: need a fresh sentence before next break
             continue  # re-evaluate the same sentence against the fresh window
 
         current.append(sentence)
         current_len += sentence_len
+        new_sentence_added = True
         i += 1
 
     if current:
