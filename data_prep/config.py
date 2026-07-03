@@ -54,3 +54,9 @@ E5_PASSAGE_PREFIX = "passage: "
 E5_QUERY_PREFIX = "query: "
 
 EMBEDDING_BATCH_SIZE = 16
+
+
+# --- Prompt building ---
+# Token budget (word-count approximation, same convention as chunker.py) for
+# how much retrieved chunk text can be included in a single prompt's context.
+MAX_CONTEXT_TOKENS = 3000
