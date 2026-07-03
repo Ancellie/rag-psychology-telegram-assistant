@@ -20,13 +20,8 @@ from sentence_transformers import SentenceTransformer
 
 import config
 
+from src.utils.device import auto_device
 
-def _auto_device() -> str:
-    if torch.cuda.is_available():
-        return "cuda"
-    if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
 
 
 class Embedder:
@@ -38,7 +33,7 @@ class Embedder:
         device: str | None = None,
         use_fp16: bool = True,
     ):
-        self.device = device or _auto_device()
+        self.device = device or auto_device()
         self.model = SentenceTransformer(model_name, device=self.device)
 
         # fp16 halves activation/weight memory and speeds up inference on

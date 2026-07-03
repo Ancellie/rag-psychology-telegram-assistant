@@ -60,3 +60,27 @@ EMBEDDING_BATCH_SIZE = 16
 # Token budget (word-count approximation, same convention as chunker.py) for
 # how much retrieved chunk text can be included in a single prompt's context.
 MAX_CONTEXT_TOKENS = 3000
+
+
+# --- LLM (Hugging Face backend, first implementation) ---
+LLM_PROVIDER = "huggingface"  # only "huggingface" implemented so far
+
+HF_LLM_MODEL_NAME = "Qwen/Qwen3-8B"
+HF_LLM_DEVICE = None                  # None -> auto-detect via src.utils.device.auto_device()
+HF_LLM_TORCH_DTYPE = "auto"
+HF_LLM_MAX_NEW_TOKENS = 512
+HF_LLM_TEMPERATURE = 0.3
+HF_LLM_DO_SAMPLE = True
+HF_LLM_ENABLE_THINKING = False        # RAG wants a direct grounded answer, not a <think> block
+
+# Quantization mode: "4bit" | "8bit" | "none" (full precision).
+# Default is 4-bit NF4 — sized for a 12GB RTX 4070; full FP16 (~16.4GB
+# weights alone) does not fit. Built into a BitsAndBytesConfig by
+# src/llm/quantization.py — never hardcoded in LocalHFModel itself, so
+# switching precision is a change to this file only.
+HF_LLM_QUANTIZATION = "4bit"
+HF_LLM_BNB_4BIT_QUANT_TYPE = "nf4"
+HF_LLM_BNB_4BIT_USE_DOUBLE_QUANT = True
+# compute dtype is not set here: bfloat16 if the GPU supports it (Ampere/Ada+,
+# which covers the RTX 4070), float16 otherwise — decided at load time in
+# quantization.py since it depends on the actual GPU in use, not a static setting. # RAG wants a direct grounded answer, not a <think> block

@@ -2,3 +2,12 @@ sentence-transformers>=3.0.0
 faiss-cpu>=1.8.0
 numpy>=1.26.0
 torch>=2.2.0
+
+
+accelerate>=0.30.0
+bitsandbytes>=0.43.0
+# flash-attn is optional and auto-detected at runtime (see
+# src/llm/huggingface_llm.py::_select_attn_implementation). Not pinned
+# here because it requires a matching CUDA toolkit + compiler to build
+# and isn't available as a simple wheel on all platforms. To enable it:
+#   pip install flash-attn --no-build-isolation
