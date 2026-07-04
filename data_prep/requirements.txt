@@ -11,3 +11,5 @@ bitsandbytes>=0.43.0
 # here because it requires a matching CUDA toolkit + compiler to build
 # and isn't available as a simple wheel on all platforms. To enable it:
 #   pip install flash-attn --no-build-isolation
+
+python-telegram-bot

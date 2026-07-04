@@ -4,6 +4,12 @@ Keep every tunable in one place so nothing is hardcoded in the logic files.
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import os
+
 
 # --- Paths ---
 BASE_DIR = Path(__file__).resolve().parent
@@ -104,3 +110,10 @@ DEBUG_RETRIEVAL = True   # query + retrieved chunks (id, lesson, score, preview)
 DEBUG_PROMPT = True      # exact system/context/user text sent to the LLM
 DEBUG_GENERATION = True  # raw model output + final Answer + token counts
 DEBUG_TIMINGS = True     # per-stage wall-clock time (retrieval/prompt/generation/total)
+DEBUG_BOT = True
+
+# --- Telegram bot ---
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+
+# --- Debug ---
+

@@ -201,3 +201,78 @@ def debug_timings(timings: dict[str, float]) -> None:
         else:
             print(f"{label}: {seconds:.2f} s")
     print()
+
+
+_BOT_PREVIEW_CHARS = 80
+
+
+def debug_bot_startup(bot_username: str | None = None) -> None:
+    """
+    Printed once the bot finishes initializing and starts polling.
+    Gated by DEBUG_BOT like every other debug_* function here — bot
+    lifecycle is treated as just another stage, not a special always-on
+    print outside this module's normal gating contract.
+    """
+    if not is_enabled(config, "DEBUG_BOT"):
+        return
+
+    _section("BOT STARTUP")
+    print(f"Bot username: @{bot_username}" if bot_username else "Bot username: (unknown)")
+    print("Polling started.")
+    print()
+
+
+def debug_bot_shutdown() -> None:
+    """Printed once the bot's polling loop stops."""
+    if not is_enabled(config, "DEBUG_BOT"):
+        return
+
+    _section("BOT SHUTDOWN")
+    print("Polling stopped.")
+    print()
+
+
+def debug_bot_message(chat_id: int, message_length: int, preview: str) -> None:
+    """
+    Printed for every incoming text message the bot processes.
+
+    Deliberately never receives or prints the full message text — only
+    chat_id, message_length, and a preview. Callers (telegram_bot.py) are
+    expected to pass an already-short preview, but this function
+    truncates again defensively to _BOT_PREVIEW_CHARS so a caller mistake
+    can never leak a full message into the logs.
+    """
+    if not is_enabled(config, "DEBUG_BOT"):
+        return
+
+    trimmed = preview[:_BOT_PREVIEW_CHARS]
+    if len(preview) > _BOT_PREVIEW_CHARS:
+        trimmed += "..."
+
+    print(f"[bot] chat_id={chat_id} message_length={message_length} preview={trimmed!r}")
+
+
+def debug_bot_error(chat_id: int, exc: Exception) -> None:
+    """Printed when pipeline.answer() raises inside the message handler."""
+    if not is_enabled(config, "DEBUG_BOT"):
+        return
+
+    print(f"[bot] chat_id={chat_id} ERROR: {type(exc).__name__}: {exc}")
+
+def debug_bot_response(chat_id: int, response_length: int, latency_seconds: float) -> None:
+    """
+    Printed after pipeline.answer() succeeds inside the message handler.
+    Mirrors debug_bot_message()'s discipline: metadata only, never the
+    actual response text. Latency is logged here (not just inside
+    Answer.latency_seconds) because that field is generation-only time —
+    this captures the full pipeline.answer() wall-clock time as observed
+    by the bot layer, which is what actually matters for typing-indicator
+    and responsiveness tuning.
+    """
+    if not is_enabled(config, "DEBUG_BOT"):
+        return
+
+    print(
+        f"[bot] chat_id={chat_id} response_length={response_length} "
+        f"latency_seconds={latency_seconds:.2f}"
+    )
