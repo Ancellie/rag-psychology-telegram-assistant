@@ -39,6 +39,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from ..prompt.models import BuiltPrompt
 from ..utils.device import auto_device
+from ..debug import debug_generation
 from .client import BaseLLM
 from .models import Answer
 
@@ -152,9 +153,10 @@ class LocalHFModel(BaseLLM):
 
         # Slice off the prompt tokens — generate() returns prompt + completion.
         completion_ids = output_ids[0][prompt_token_count:]
-        text = self.tokenizer.decode(completion_ids, skip_special_tokens=True).strip()
+        raw_text = self.tokenizer.decode(completion_ids, skip_special_tokens=True)
+        text = raw_text.strip()
 
-        return Answer(
+        answer = Answer(
             text=text,
             chunks_used=prompt.chunks_used,
             truncated=prompt.truncated,
@@ -163,3 +165,7 @@ class LocalHFModel(BaseLLM):
             prompt_tokens=prompt_token_count,
             completion_tokens=completion_ids.shape[0],
         )
+
+        debug_generation(answer, raw_text=raw_text)
+
+        return answer

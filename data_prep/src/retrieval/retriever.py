@@ -12,6 +12,7 @@ import faiss
 
 from ..embedder import Embedder
 from ..storage import load_chunks_json
+from ..debug import debug_retrieval
 from .models import RetrievedChunk
 
 
@@ -79,5 +80,7 @@ class Retriever:
                     rank=rank,
                 )
             )
+
+        debug_retrieval(query, results)
 
         return results

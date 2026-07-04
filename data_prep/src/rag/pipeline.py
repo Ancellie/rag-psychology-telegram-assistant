@@ -26,6 +26,8 @@ have to repeat that wiring — it does not change the class's DI contract,
 it's just one way of satisfying it.
 """
 
+import time
+
 import config
 from ..embedder import Embedder
 from ..llm.client import BaseLLM
@@ -33,6 +35,7 @@ from ..llm.factory import get_llm
 from ..prompt.builder import PromptBuilder
 from ..retrieval.retriever import Retriever
 from ..llm.models import Answer
+from ..debug import debug_timings
 
 
 class RAGPipeline:
@@ -66,10 +69,41 @@ class RAGPipeline:
         Raises whatever the underlying layers raise — this method adds
         no error handling of its own. Callers (CLI, bot) decide how to
         surface a failure to the user, same as with BaseLLM.generate().
+
+        Retrieval and prompt-building are timed with perf_counter() here
+        since RAGPipeline is the only layer that sees both stage
+        boundaries. Generation is NOT timed again — BaseLLM.generate()
+        already measures its own latency_seconds and returns it on
+        Answer, so that value is reused rather than wrapping llm.generate()
+        in a second stopwatch. debug_timings() decides on its own whether
+        to actually print anything (see src/debug.py); this method always
+        passes it the numbers, the same way debug_retrieval/debug_prompt/
+        debug_generation are always called unconditionally by their own
+        layers.
         """
+        t0 = time.perf_counter()
         retrieved_chunks = self.retriever.search(query, top_k=top_k)
+        retrieval_seconds = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
         prompt = self.prompt_builder.build(query, retrieved_chunks)
-        return self.llm.generate(prompt)
+        prompt_seconds = time.perf_counter() - t0
+
+        answer = self.llm.generate(prompt)
+        generation_seconds = answer.latency_seconds
+
+        total_seconds = retrieval_seconds + prompt_seconds + generation_seconds
+
+        debug_timings(
+            {
+                "Query embedding + FAISS search": retrieval_seconds,
+                "Prompt building": prompt_seconds,
+                "Generation": generation_seconds,
+                "Total": total_seconds,
+            }
+        )
+
+        return answer
 
 
 def build_default_pipeline(cfg=config) -> RAGPipeline:

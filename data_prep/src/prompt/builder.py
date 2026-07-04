@@ -14,6 +14,7 @@ for MAX_CONTEXT_TOKENS. Nothing else.
 
 import config
 from ..retrieval.models import RetrievedChunk
+from ..debug import debug_prompt
 from .models import BuiltPrompt
 from . import templates
 
@@ -42,13 +43,15 @@ class PromptBuilder:
         method does not re-sort.
         """
         if not chunks:
-            return BuiltPrompt(
+            prompt = BuiltPrompt(
                 system=templates.SYSTEM_PROMPT_TEMPLATE,
                 context=templates.NO_CONTEXT_NOTICE,
                 user=query,
                 chunks_used=[],
                 truncated=False,
             )
+            debug_prompt(prompt)
+            return prompt
 
         included, truncated = self._select_within_budget(chunks)
         context = templates.CONTEXT_CHUNK_SEPARATOR.join(
@@ -58,13 +61,15 @@ class PromptBuilder:
             for c in included
         )
 
-        return BuiltPrompt(
+        prompt = BuiltPrompt(
             system=templates.SYSTEM_PROMPT_TEMPLATE,
             context=context,
             user=query,
             chunks_used=[c.chunk_id for c in included],
             truncated=truncated,
         )
+        debug_prompt(prompt)
+        return prompt
 
     def _select_within_budget(
         self, chunks: list[RetrievedChunk]

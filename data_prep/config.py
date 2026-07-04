@@ -84,3 +84,23 @@ HF_LLM_BNB_4BIT_USE_DOUBLE_QUANT = True
 # compute dtype is not set here: bfloat16 if the GPU supports it (Ampere/Ada+,
 # which covers the RTX 4070), float16 otherwise — decided at load time in
 # quantization.py since it depends on the actual GPU in use, not a static setting. # RAG wants a direct grounded answer, not a <think> block
+
+
+# --- Debugging ---
+# Master switch plus one flag per pipeline stage, so a developer can enable
+# exactly the layer they're diagnosing (e.g. only DEBUG_RETRIEVAL while
+# tuning chunk relevance) without being flooded by the others. All debug
+# output is formatted and printed by src/debug.py — nothing outside that
+# module ever calls print() for debugging purposes. When every flag below
+# is False, each call site does one boolean check and nothing else: no
+# extra allocation, no extra I/O, no behavior change.
+#
+# DEBUG is a convenience master switch: if True, it forces every
+# per-stage flag on regardless of their individual values (see
+# src/debug.py:is_enabled()). Leave DEBUG=False and toggle the specific
+# stage flags for targeted debugging instead.
+DEBUG = True
+DEBUG_RETRIEVAL = True   # query + retrieved chunks (id, lesson, score, preview)
+DEBUG_PROMPT = True      # exact system/context/user text sent to the LLM
+DEBUG_GENERATION = True  # raw model output + final Answer + token counts
+DEBUG_TIMINGS = True     # per-stage wall-clock time (retrieval/prompt/generation/total)
